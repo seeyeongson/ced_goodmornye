@@ -4,10 +4,21 @@ import json
 from datetime import datetime
 import requests
 from google import genai
+from weather import get_weather as fetch_weather
 
 def get_weather():
     # TODO: 팀원 B (feature/weather) - Open-Meteo 날씨 수집 구현
-    pass
+
+    # 날씨 데이터를 브리핑에 사용할 문장으로 변환
+    result = fetch_weather()
+
+    if result["status"] == "error":
+        return "현재 날씨 정보를 가져올 수 없습니다."
+
+    return (
+        f"{result['city']} 현재 기온: {result['temperature']}°C, "
+        f"날씨: {result['weather']}"
+    )
 
 def get_d_days():
     # TODO: 팀원 C (feature/ai-dday) - deadlines.json 읽기 & D-day 계산 구현
