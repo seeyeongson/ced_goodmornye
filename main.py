@@ -7,7 +7,7 @@ import requests
 from google import genai
 from weather import get_weather as fetch_weather
 
-if # .env 파일이 없으면 친절하게 에러를 띄우고 중단
+# .env 파일이 없으면 친절하게 에러를 띄우고 중단
 if not os.path.exists(".env"):
     print("❌ [.env 파일 없음] .env.example 파일을 복사하여 .env 파일을 만들고 API 키를 입력해주세요!")
     exit(1)
