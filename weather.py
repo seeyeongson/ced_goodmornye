@@ -52,8 +52,12 @@ def get_weather():
     }
 
     try:
-        # API에 GET 요청을 보내고 HTTP 오류 확인
-        response = requests.get(url, params=params, timeout=10)
+        # 타임아웃이 발생하면 한 번만 다시 요청
+        try:
+            response = requests.get(url, params=params, timeout=10)
+        except requests.exceptions.Timeout:
+            response = requests.get(url, params=params, timeout=10)
+
         response.raise_for_status()
 
         # JSON 응답을 Python 데이터로 변환
