@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import json
 from datetime import datetime
 import requests
+import time
 from google import genai
 from weather import get_weather as fetch_weather
 
@@ -13,6 +14,7 @@ if not os.path.exists(".env"):
     exit(1)
 
 load_dotenv()
+
 
 def get_weather():
     # TODO: 팀원 B (feature/weather) - Open-Meteo 날씨 수집 구현
@@ -27,6 +29,7 @@ def get_weather():
         f"{result['city']} 현재 기온: {result['temperature']}°C, "
         f"날씨: {result['weather']}"
     )
+
 
 def get_d_days():
     try:
@@ -74,13 +77,16 @@ def get_d_days():
     except Exception as e:
         return f"D-Day 계산 오류: {e}"
 
+
 def generate_morning_briefing(weather_text, d_day_text):
     # TODO: 팀원 C (feature/ai-dday) - Gemini API 연동 & 요약 프롬프트 작성
     pass
 
+
 def send_discord(message):
     # TODO: 팀원 D (feature/discord) - Discord Webhook 전송 구현
     pass
+
 
 if __name__ == "__main__":
     print("모닝 브리핑 봇 실행 시작...")
