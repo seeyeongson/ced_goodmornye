@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import json
 from datetime import datetime
 import requests
+import time
 from google import genai
 from weather import get_weather as fetch_weather
 
@@ -69,14 +70,58 @@ def get_d_days():
                 indent=2
             )
 
+        if not results:
+            return "현재 등록된 일정이 없습니다."
+
         return "\n".join(results)
 
     except Exception as e:
         return f"D-Day 계산 오류: {e}"
 
 def generate_morning_briefing(weather_text, d_day_text):
-    # TODO: 팀원 C (feature/ai-dday) - Gemini API 연동 & 요약 프롬프트 작성
-    pass
+    try:
+        client = genai.Client(
+            api_key=os.getenv("GEMINI_API_KEY")
+        )
+
+        prompt = f"""
+당신은 대학생을 위한 AI 모닝 브리핑 도우미입니다.
+
+날씨:
+{weather_text}
+
+마감 일정:
+{d_day_text}
+
+다음을 포함하여 150~200자 내외의 한국어 브리핑을 작성하세요.
+
+- 오늘의 날씨 요약
+- 가장 임박한 일정
+- 오늘의 우선순위 제안
+- 긍정적인 응원 문구
+"""
+
+        for _ in range(3):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-3.8-flash",
+                    contents=prompt
+                )
+
+                return response.text
+
+            except Exception as e:
+                print(f"Gemini 재시도 중: {e}")
+                time.sleep(3)
+
+        return (
+            "AI 서버가 현재 혼잡합니다.\n\n"
+            f"날씨: {weather_text}\n\n"
+            f"일정:\n{d_day_text}"
+        )
+
+    except Exception as e:
+        return f"브리핑 생성 실패: {e}"
 
 def send_discord(message):
     # TODO: 팀원 D (feature/discord) - Discord Webhook 전송 구현
@@ -87,5 +132,6 @@ if __name__ == "__main__":
     weather = get_weather()
     d_days = get_d_days()
     briefing = generate_morning_briefing(weather, d_days)
-    send_discord(briefing)
+    print(briefing) #테스트 용
+    #send_discord(briefing)
     print("브리핑 완료!")
