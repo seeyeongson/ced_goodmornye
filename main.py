@@ -3,9 +3,8 @@ import os
 from dotenv import load_dotenv
 import json
 from datetime import datetime
-import requests
-import time
-from google import genai
+import time  # noqa: F401
+from google import genai  # noqa: F401
 from weather import get_weather as fetch_weather
 
 # .env 파일이 없으면 친절하게 에러를 띄우고 중단
