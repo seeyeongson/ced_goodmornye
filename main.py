@@ -86,7 +86,9 @@ def get_d_days():
 def generate_morning_briefing(weather_text, d_day_text):
     try:
         client = genai.Client(
-            api_key=os.getenv("GEMINI_API_KEY")
+            vertexai=True,
+            project="604391155797",
+            location="global"
         )
 
         prompt = f"""
@@ -109,7 +111,7 @@ def generate_morning_briefing(weather_text, d_day_text):
         for _ in range(3):
             try:
                 response = client.models.generate_content(
-                    model="gemini-3.8-flash",
+                    model="publishers/google/models/gemini-3.8-flash",
                     contents=prompt
                 )
 
@@ -139,6 +141,6 @@ if __name__ == "__main__":
     weather = get_weather()
     d_days = get_d_days()
     briefing = generate_morning_briefing(weather, d_days)
-    print(briefing) #테스트 용
-    #send_discord(briefing)
+    print(briefing) # 테스트 용
+    # send_discord(briefing)
     print("브리핑 완료!")
