@@ -174,6 +174,10 @@ if __name__ == "__main__":
     d_days = get_d_days()
 
     briefing = generate_morning_briefing(weather, d_days)
-    print(briefing) # 테스트 용
-    # send_discord(briefing)
+    print(briefing)
+
+    if not send_discord(briefing):
+        print("❌ Discord 브리핑 전송에 실패했습니다.")
+        raise SystemExit(1)
+
     print("브리핑 완료!")
