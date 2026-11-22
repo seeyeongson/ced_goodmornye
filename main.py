@@ -7,8 +7,8 @@ import time  # noqa: F401
 from google import genai  # noqa: F401
 from google.genai import types
 import requests
-import time
-from google import genai
+import time  # noqa: F401
+from google import genai  # noqa: F401
 from weather import get_weather as fetch_weather
 
 # .env 파일이 없으면 친절하게 에러를 띄우고 중단
@@ -89,8 +89,7 @@ def generate_morning_briefing(weather_text, d_day_text):
         client = genai.Client(
             vertexai=True,
             project="604391155797",
-            location="global"
-            api_key=os.getenv("GEMINI_API_KEY"),
+            location="global",
             http_options=types.HttpOptions(timeout=30000)
         )
 
@@ -178,5 +177,3 @@ if __name__ == "__main__":
     print(briefing) # 테스트 용
     # send_discord(briefing)
     print("브리핑 완료!")
-
-    
