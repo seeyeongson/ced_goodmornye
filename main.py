@@ -144,3 +144,5 @@ if __name__ == "__main__":
     print(briefing) # 테스트 용
     # send_discord(briefing)
     print("브리핑 완료!")
+
+    
