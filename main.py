@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 import time  # noqa: F401
 from google import genai  # noqa: F401
+from google.genai import types
 import requests
 import time
 from google import genai
@@ -89,6 +90,8 @@ def generate_morning_briefing(weather_text, d_day_text):
             vertexai=True,
             project="604391155797",
             location="global"
+            api_key=os.getenv("GEMINI_API_KEY"),
+            http_options=types.HttpOptions(timeout=30000)
         )
 
         prompt = f"""
@@ -131,15 +134,46 @@ def generate_morning_briefing(weather_text, d_day_text):
         return f"브리핑 생성 실패: {e}"
 
 
+
 def send_discord(message):
-    # TODO: 팀원 D (feature/discord) - Discord Webhook 전송 구현
-    pass
+    webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
+
+    if not webhook_url:
+        print("❌ Discord Webhook URL이 설정되지 않았습니다.")
+        return False
+
+    if not message:
+        print("❌ 전송할 메시지가 없습니다.")
+        return False
+
+    data = {
+        "content": message
+    }
+
+    try:
+        response = requests.post(
+            webhook_url,
+            json=data,
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        print("✅ Discord 메시지 전송 성공!")
+        return True
+
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Discord 메시지 전송 실패: {e}")
+        return False
+
 
 
 if __name__ == "__main__":
     print("모닝 브리핑 봇 실행 시작...")
+
     weather = get_weather()
     d_days = get_d_days()
+
     briefing = generate_morning_briefing(weather, d_days)
     print(briefing) # 테스트 용
     # send_discord(briefing)
