@@ -24,7 +24,6 @@
 
 ## 📁 프로젝트 구조
 
-```text
 ced_goodmornye/
 ├── main.py              # 메인 실행 파이프라인 (날씨·일정 수집, Gemini 생성, Discord 전송)
 ├── weather.py           # 날씨 조회 모듈
@@ -33,6 +32,8 @@ ced_goodmornye/
 ├── .env.example         # 환경 변수 설정 예시 파일
 ├── .gitignore           # Git 제외 파일 설정 (.env, 서비스 계정 JSON 등)
 └── README.md            # 프로젝트 안내 문서
+
+---
 
 ## ⚙️ 사전 준비물
 1. Python 3.10 이상
@@ -48,6 +49,8 @@ ced_goodmornye/
 3. Discord 웹훅 URL
 
     브리핑을 수신할 Discord 채널의 웹훅 URL (https://discord.com/api/webhooks/...)
+
+---
 
 ## 🚀 설치 및 실행 방법
 1. 저장소 클론 및 이동
@@ -109,28 +112,21 @@ deadlines.json에 관리할 일정을 JSON 배열 형태로 입력합니다.
 5. 봇 실행
 
 python main.py
-🛠️ 자주 발생하는 오류 및 해결 방법
-[.env 파일 없음] 안내 후 종료되는 경우
-
-프로젝트 루트 폴더에 .env 파일이 존재하는지 확인하세요.
-
-401 UNAUTHENTICATED / 403 PERMISSION_DENIED
-
-GOOGLE_APPLICATION_CREDENTIALS 경로가 정확한지, 해당 서비스 계정에 Vertex AI 사용 권한이 있는지 확인하세요.
-
-403 API_KEY_SERVICE_BLOCKED
-
-Vertex AI 서비스 계정 인증 사용 시 genai.Client에 문자열 api_key가 전달되지 않았는지, 환경 변수(GEMINI_API_KEY, GOOGLE_API_KEY)가 함께 설정되어 있지 않은지 확인하세요.
-
-404 NOT_FOUND
-
-코드에 지정된 모델 ID와 리전(location)이 현재 Google Cloud 프로젝트에서 지원되는 조합인지 Model Garden 및 리전 가용성에서 확인하세요.
-
-Discord 전송 실패
-
-.env의 DISCORD_WEBHOOK_URL 값이 올바른지, 인터넷 연결 및 Discord 웹훅 상태가 정상인지 확인하세요.
-
 
 ---
 
-저장소에 이미 있는 `requirements.txt` 패키지 이름이나 `.env.example`의 변수명, 실제 사용 중인 모
+## 🛠️ 자주 발생하는 오류 및 해결 방법
+[.env 파일 없음] 안내 후 종료되는 경우
+> 프로젝트 루트 폴더에 .env 파일이 존재하는지 확인하세요.
+
+401 UNAUTHENTICATED / 403 PERMISSION_DENIED
+> GOOGLE_APPLICATION_CREDENTIALS 경로가 정확한지, 해당 서비스 계정에 Vertex AI 사용 권한이 있는지 확인하세요.
+
+403 API_KEY_SERVICE_BLOCKED
+> Vertex AI 서비스 계정 인증 사용 시 genai.Client에 문자열 api_key가 전달되지 않았는지, 환경 변수(GEMINI_API_KEY, GOOGLE_API_KEY)가 함께 설정되어 있지 않은지 확인하세요.
+
+404 NOT_FOUND
+> 코드에 지정된 모델 ID와 리전(location)이 현재 Google Cloud 프로젝트에서 지원되는 조합인지 Model Garden 및 리전 가용성에서 확인하세요.
+
+Discord 전송 실패
+> .env의 DISCORD_WEBHOOK_URL 값이 올바른지, 인터넷 연결 및 Discord 웹훅 상태가 정상인지 확인하세요.
