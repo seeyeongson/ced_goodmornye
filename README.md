@@ -24,9 +24,14 @@
 
 ```text
 ced_goodmornye/
+├── .github/
+│   └── workflows/
+│       └── morning.yml  # GitHub Actions 자동 실행 설정 (매일 오전 7시)
+├── .vscode/
+│   └── settings.json    # VS Code에서 .env 자동 로드 설정
 ├── setup.bat            # Windows용 자동 세팅 및 실행 스크립트
 ├── main.py              # 날씨·일정 수집, Gemini 브리핑 생성, Discord 전송
-├── weather.py           # 날씨 조회 모듈
+├── weather.py           # 날씨 조회 모듈 (Open-Meteo API)
 ├── deadlines.json       # 마감 일정 목록 (YYYY-MM-DD 형식)
 ├── requirements.txt     # 필요한 Python 패키지 목록
 ├── .env.example         # 환경 변수 입력 양식
@@ -102,6 +107,122 @@ cp .env.example .env
 ```bash
 python main.py
 ```
+
+---
+
+---
+
+## 🔄 자동 실행 (GitHub Actions)
+
+`.github/workflows/morning.yml`에 설정되어 있어, 매일 **한국 시간 오전 7시**(UTC 22:00)에 자동으로 브리핑이 전송됩니다. GitHub의 **Actions** 탭에서 `Run workflow` 버튼으로 수동 실행도 할 수 있습니다.
+
+자동 실행을 쓰려면 저장소의 **Settings → Secrets and variables → Actions**에 아래 값을 등록하세요.
+
+| Secret 이름 | 설명 |
+| --- | --- |
+| `DISCORD_WEBHOOK_URL` | 브리핑을 받을 Discord 웹훅 URL |
+| `GEMINI_API_KEY` | 워크플로에서 전달하는 키 (아래 ⚠️ 참고) |
+
+> ⚠️ **참고**: 현재 `main.py`는 Vertex AI 서비스 계정 인증(`GOOGLE_APPLICATION_CREDENTIALS`)을 사용하지만, 워크플로는 `GEMINI_API_KEY`만 전달합니다. 자동 실행에서 Gemini 인증이 실패하면 서비스 계정 키를 Secret으로 등록하고 워크플로에서 파일로 복원하는 방식으로 맞춰야 합니다.
+
+---
+
+## 🧩 동작 흐름
+
+`main.py`는 아래 순서로 실행됩니다.
+
+1. **날씨 조회** (`weather.py`): Open-Meteo API에서 현재 기온과 날씨 코드를 가져옵니다. API 키는 필요 없습니다.
+2. **D-Day 계산** (`main.py`의 `get_d_days`): `deadlines.json`을 읽어 남은 일수를 계산합니다.
+3. **브리핑 생성**: 날씨와 일정을 Gemini에 전달해 150~200자 내외의 한국어 브리핑을 만듭니다.
+   * 날씨 요약, 가장 임박한 일정, 오늘의 우선순위, 응원 문구를 포함합니다.
+   * Gemini 호출이 3회 모두 실패하면 AI 없이 날씨와 일정 원문을 그대로 보내는 대체 메시지를 사용합니다.
+4. **Discord 전송**: 완성된 메시지를 웹훅으로 보냅니다. 전송에 실패하면 종료 코드 `1`로 끝납니다.
+
+---
+
+## ⚙️ 설정 옵션
+
+### 날씨 지역 변경
+
+기본 지역은 서울입니다. `.env`에 아래 값을 추가하면 다른 지역의 날씨를 받을 수 있습니다.
+
+```env
+WEATHER_CITY=Busan
+WEATHER_LAT=35.1796
+WEATHER_LON=129.0756
+```
+
+* 세 값 중 하나라도 비어 있으면 서울 기본값이 사용됩니다.
+* 위도/경도가 숫자가 아니면 경고를 출력하고 서울 기본값을 씁니다.
+* 날씨 설명은 영어(예: `Clear sky`)로 받아오고, 최종 브리핑은 Gemini가 한국어로 작성합니다.
+
+### Gemini 모델 및 프로젝트 변경
+
+`main.py`의 `generate_morning_briefing` 함수에서 아래 값을 본인 환경에 맞게 수정해야 합니다.
+
+```python
+client = genai.Client(
+    vertexai=True,
+    project="604391155797",   # ← 본인의 Google Cloud 프로젝트 ID 또는 번호로 변경
+    location="global",        # ← 사용 가능한 리전으로 변경
+    ...
+)
+model="publishers/google/models/gemini-3.8-flash"  # ← 사용 가능한 모델 ID로 변경
+```
+
+---
+
+## 📅 마감 일정(`deadlines.json`) 작성 규칙
+
+```json
+[
+  {
+    "title": "자료구조 중간고사",
+    "date": "2026-11-25"
+  }
+]
+```
+
+* `title`: 브리핑에 표시될 일정 이름
+* `date`: `YYYY-MM-DD` 형식. 다른 형식이면 D-Day 계산 오류가 납니다.
+* 출력 예시: `D-3`, `D-Day`, `마감 지남 (2일 전)`
+* **자동 정리**: 봇을 실행할 때마다 마감일이 **5일 넘게 지난 일정은 파일에서 삭제**됩니다. 마감 후 5일까지는 "마감 지남"으로 표시됩니다.
+* 등록된 일정이 없으면 "현재 등록된 일정이 없습니다."라고 표시됩니다.
+
+---
+
+## 🪟 `setup.bat` 동작 상세
+
+1. `python` 명령이 없으면 설치 안내 후 종료합니다.
+2. `.venv`가 없으면 생성하고, `requirements.txt`를 설치합니다.
+3. `.env`가 없으면 `.env.example`을 복사한 뒤 메모장을 열고 **한 번 종료**합니다. 값을 입력한 후 다시 실행하세요.
+4. 실행 전에 `GEMINI_API_KEY`, `GOOGLE_API_KEY` 환경 변수를 비웁니다. 서비스 계정 인증과 API 키가 섞이는 것을 막기 위해서입니다. (이 설정은 해당 배치 창 안에서만 적용됩니다.)
+5. `main.py`를 실행하고 결과 코드를 표시한 뒤 창이 닫히기 전에 대기합니다.
+
+---
+
+## 🛠 개발 환경 참고
+
+* `.vscode/settings.json`에 `"python.terminal.useEnvFile": true`가 설정되어 있어, VS Code 터미널을 열 때 `.env` 값이 자동으로 로드됩니다.
+* `.env` 파일이 없으면 `main.py`는 안내 메시지를 출력하고 종료합니다. (GitHub Actions 환경에서는 이 검사를 건너뜁니다.)
+
+---
+
+## 📦 의존성
+
+| 패키지 | 용도 |
+| --- | --- |
+| `requests` | 날씨 API 및 Discord 웹훅 요청 |
+| `google-genai` | Vertex AI(Gemini) 호출 |
+| `python-dotenv` | `.env` 파일 로드 |
+
+---
+
+## 📚 참고 자료
+
+* 날씨 데이터: [Open-Meteo Forecast API](https://open-meteo.com/)
+* 브리핑 생성: [Google Gen AI SDK (Python)](https://github.com/googleapis/python-genai)
+* 메시지 전송: [Discord 웹훅 문서](https://discord.com/developers/docs/resources/webhook)
 
 ---
 
