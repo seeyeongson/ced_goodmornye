@@ -2,8 +2,8 @@ name: Morning Briefing Bot
 
 on:
   schedule:
-    - cron: '0 22 * * *'  # UTC 기준 밤 12시 = 한국 시간 아침 7시
-  workflow_dispatch:      # 수동으로도 실행할 수 있게 설정
+    - cron: '0 22 * * *'  # UTC 22:00 = 한국 시간(KST) 오전 7시
+  workflow_dispatch:      # 수동 실행 버튼 활성화
 
 jobs:
   run-bot:
@@ -22,9 +22,18 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Set up Google Cloud credentials
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          echo "$GCP_SA_KEY" > gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$PWD/gcp-key.json" >> "$GITHUB_ENV"
+
       - name: Run main script
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          WEATHER_CITY: Seoul
+          WEATHER_LAT: "37.5665"
+          WEATHER_LON: "126.9780"
         run: |
           python main.py
