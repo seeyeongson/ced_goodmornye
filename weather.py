@@ -1,9 +1,12 @@
-
 # 팀 프로젝트 B: 날씨 데이터 수집
-# Open-Meteo API를 이용하여 서울의 현재 날씨 정보를 가져옵니다.
+# Open-Meteo API를 이용하여 지정된 도시(기본값: 서울)의 현재 날씨 정보를 가져옵니다.
 
+import os
 import requests
 
+DEFAULT_CITY = "Seoul"
+DEFAULT_LAT = 37.5665
+DEFAULT_LON = 126.9780
 
 # WMO 날씨 코드를 영어 설명으로 변환
 weather_descriptions = {
@@ -34,21 +37,44 @@ weather_descriptions = {
     86: "Heavy snow showers",
     95: "Thunderstorm",
     96: "Thunderstorm with slight hail",
-    99: "Thunderstorm with heavy hail"
+    99: "Thunderstorm with heavy hail",
 }
+
+
+def get_location_config():
+    """환경 변수에서 날씨 조회 지역 설정을 읽고, 미설정/오류 시 기본값(서울)을 반환합니다."""
+    city = (os.getenv("WEATHER_CITY") or DEFAULT_CITY).strip() or DEFAULT_CITY
+
+    lat_raw = os.getenv("WEATHER_LAT")
+    lon_raw = os.getenv("WEATHER_LON")
+
+    try:
+        latitude = float(lat_raw) if lat_raw is not None and lat_raw.strip() != "" else DEFAULT_LAT
+    except ValueError:
+        print(f"⚠️ 잘못된 WEATHER_LAT 값('{lat_raw}')입니다. 기본값({DEFAULT_LAT})을 사용합니다.")
+        latitude = DEFAULT_LAT
+
+    try:
+        longitude = float(lon_raw) if lon_raw is not None and lon_raw.strip() != "" else DEFAULT_LON
+    except ValueError:
+        print(f"⚠️ 잘못된 WEATHER_LON 값('{lon_raw}')입니다. 기본값({DEFAULT_LON})을 사용합니다.")
+        longitude = DEFAULT_LON
+
+    return city, latitude, longitude
 
 
 # 현재 날씨 정보를 가져오는 함수
 def get_weather():
+    city, latitude, longitude = get_location_config()
 
     # API 주소 및 요청할 날씨 데이터 설정
     url = "https://api.open-meteo.com/v1/forecast"
 
     params = {
-        "latitude": 37.5665,
-        "longitude": 126.9780,
+        "latitude": latitude,
+        "longitude": longitude,
         "current": "temperature_2m,weather_code",
-        "timezone": "Asia/Seoul"
+        "timezone": "Asia/Seoul",
     }
 
     try:
@@ -73,35 +99,30 @@ def get_weather():
             raise ValueError("Missing weather data")
 
         # 날씨 코드를 영어 설명으로 변환
-        weather = weather_descriptions.get(
-            weather_code, "Unknown weather"
-        )
+        weather = weather_descriptions.get(weather_code, "Unknown weather")
 
         # 정상적으로 가져온 날씨 정보 반환
         return {
-            "city": "Seoul",
+            "city": city,
             "temperature": temperature,
             "weather": weather,
-            "status": "success"
+            "status": "success",
         }
 
-    except (requests.exceptions.RequestException,
-            ValueError, KeyError, TypeError) as error:
-
+    except (requests.exceptions.RequestException, ValueError, KeyError, TypeError) as error:
         # 오류 발생 시 대체 메시지 반환
         print("Weather API error:", error)
 
         return {
-            "city": "Seoul",
+            "city": city,
             "temperature": None,
             "weather": "Weather information unavailable",
-            "status": "error"
+            "status": "error",
         }
 
 
 # 파일을 직접 실행한 경우에만 테스트 결과 출력
 if __name__ == "__main__":
-
     weather_data = get_weather()
 
     print("===== MORNING WEATHER =====")

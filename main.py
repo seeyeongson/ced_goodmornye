@@ -1,27 +1,27 @@
 # main.py
-import os
-from dotenv import load_dotenv
-import json
 from datetime import datetime
-import time  # noqa: F401
-from google import genai  # noqa: F401
+import json
+import os
+import time
+
+from dotenv import load_dotenv
+from google import genai
 from google.genai import types
 import requests
-import time  # noqa: F401
-from google import genai  # noqa: F401
-from weather import get_weather as fetch_weather
 
-# .env 파일이 없으면 친절하게 에러를 띄우고 중단
-if not os.path.exists(".env"):
-    print("❌ [.env 파일 없음] .env.example 파일을 복사하여 .env 파일을 만들고 API 키를 입력해주세요!")
-    exit(1)
+from weather import get_weather as fetch_weather
 
 load_dotenv()
 
+is_github_actions = os.getenv("GITHUB_ACTIONS") == "true"
+
+# 로컬 실행 환경에서는 .env 파일이 없으면 안내 후 종료
+if not is_github_actions and not os.path.exists(".env"):
+    print("❌ [.env 파일 없음] .env.example 파일을 복사하여 .env 파일을 만들고 API 키를 입력해주세요!")
+    raise SystemExit(1)
+
 
 def get_weather():
-    # TODO: 팀원 B (feature/weather) - Open-Meteo 날씨 수집 구현
-
     # 날씨 데이터를 브리핑에 사용할 문장으로 변환
     result = fetch_weather()
 
@@ -45,9 +45,7 @@ def get_d_days():
 
         for item in deadlines:
             title = item["title"]
-            deadline = datetime.strptime(
-                item["date"], "%Y-%m-%d"
-            ).date()
+            deadline = datetime.strptime(item["date"], "%Y-%m-%d").date()
 
             diff = (deadline - today).days
 
@@ -62,9 +60,7 @@ def get_d_days():
             elif diff == 0:
                 results.append(f"{title}: D-Day")
             else:
-                results.append(
-                    f"{title}: 마감 지남 ({abs(diff)}일 전)"
-                )
+                results.append(f"{title}: 마감 지남 ({abs(diff)}일 전)")
 
         # 제거된 일정 반영
         with open("deadlines.json", "w", encoding="utf-8") as f:
@@ -72,7 +68,7 @@ def get_d_days():
                 updated_deadlines,
                 f,
                 ensure_ascii=False,
-                indent=2
+                indent=2,
             )
 
         if not results:
@@ -90,7 +86,7 @@ def generate_morning_briefing(weather_text, d_day_text):
             vertexai=True,
             project="604391155797",
             location="global",
-            http_options=types.HttpOptions(timeout=30000)
+            http_options=types.HttpOptions(timeout=30000),
         )
 
         prompt = f"""
@@ -114,7 +110,7 @@ def generate_morning_briefing(weather_text, d_day_text):
             try:
                 response = client.models.generate_content(
                     model="publishers/google/models/gemini-3.8-flash",
-                    contents=prompt
+                    contents=prompt,
                 )
 
                 return response.text
@@ -133,7 +129,6 @@ def generate_morning_briefing(weather_text, d_day_text):
         return f"브리핑 생성 실패: {e}"
 
 
-
 def send_discord(message):
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
 
@@ -146,14 +141,14 @@ def send_discord(message):
         return False
 
     data = {
-        "content": message
+        "content": message,
     }
 
     try:
         response = requests.post(
             webhook_url,
             json=data,
-            timeout=10
+            timeout=10,
         )
 
         response.raise_for_status()
@@ -164,7 +159,6 @@ def send_discord(message):
     except requests.exceptions.RequestException as e:
         print(f"❌ Discord 메시지 전송 실패: {e}")
         return False
-
 
 
 if __name__ == "__main__":
